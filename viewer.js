@@ -3,14 +3,15 @@ import { CONSTANTS } from '@photo-sphere-viewer/core';
 import { GalleryPlugin } from '@photo-sphere-viewer/gallery-plugin';
 import { pruneFolders } from './folder.js';
 import { showOpenPanel, showRecent, useFolder } from './pick.js';
-import { load, placeholder, served, stepAhead, viewer } from './tour.js';
+import { demo, load, placeholder, served, stepAhead, viewer } from './tour.js';
 import {
   bar, closePanels, details, FOLDER_ICON, fullscreenButton, galleryButton, hash, infoButton, lookButton, openFolderButton,
   openPanel, picker, rad, toggle, viewerElement,
 } from './ui.js';
 
-// ?pick=1 ignores data/, to try the site as hosted
-const pickOnly = new URLSearchParams(location.search).get('pick') === '1';
+// ?demo=1 opens the demo; ?pick=1 ignores data/, to try the site as hosted
+const query = new URLSearchParams(location.search);
+const first = query.get('demo') === '1' ? demo : query.get('pick') === '1' ? null : served;
 
 const { ICONS } = CONSTANTS;
 // Hiding leaves a tab at the edge to bring the bar back
@@ -109,9 +110,9 @@ async function openRemembered() {
 }
 
 await pruneFolders();
-const servedOpened = !pickOnly && await load(served).then(() => true, () => false);
+const opened = first && await load(first).then(() => true, () => false);
 // Otherwise, show the folder panel
-if (!servedOpened && !await openRemembered()) {
+if (!opened && !await openRemembered()) {
   placeholder();
   bar.classList.add('empty');
   openPanel.classList.add('open');

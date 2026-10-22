@@ -331,6 +331,21 @@ html, body {
   .button:hover {
     background: #3b7;
   }
+  .choices {
+    display: flex;
+    gap: 8px;
+  }
+  .choices .button {
+    flex: 1;
+  }
+  .button.secondary {
+    flex: 0 0 auto;
+    width: auto;
+    background: rgba(255, 255, 255, .12);
+  }
+  .button.secondary:hover {
+    background: rgba(255, 255, 255, .2);
+  }
   svg, .button svg {
     width: 16px;
     height: 16px;

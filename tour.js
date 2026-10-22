@@ -32,6 +32,8 @@ const resolve = (path, from = '') => decodeURIComponent(new URL(encode(path), RO
 // Files served next to the page: data/, or a picked folder through sw.js
 export const under = (dir) => ({ url: (path) => new URL(encode(path), new URL(dir, location.href)).href });
 export const served = under('data/');
+// The example library, shipped with the site
+export const demo = under('examples/');
 
 async function json(path, from = source) {
   const r = await fetch(from.url(resolve(path)));
@@ -45,6 +47,11 @@ export async function load(from) {
   source = from;
   tours = library.tours;
   document.title = library.name ?? 'Panorama Viewer';
+  // ?demo=1 reopens the demo on reload, until another library opens
+  const url = new URL(location.href);
+  if (from === demo) url.searchParams.set('demo', '1');
+  else url.searchParams.delete('demo');
+  history.replaceState(null, '', url);
   picker.replaceChildren(...tours.map((t) => new Option(t.name, t.path)));
   bar.classList.remove('empty');
   // Only a picked folder can be swapped for another
@@ -327,7 +334,16 @@ function placeholderImage() {
   return c.toDataURL('image/jpeg');
 }
 
-// Shown until a tour opens; turns slowly until touched
+// The placeholder turns slowly, starting again a moment after the last input
+let lastInput = -Infinity;
+let pressed = false;
+for (const type of ['pointerdown', 'pointerup', 'wheel', 'keydown']) {
+  addEventListener(type, () => { lastInput = performance.now(); }, true);
+}
+addEventListener('pointerdown', () => { pressed = true; }, true);
+addEventListener('pointerup', () => { pressed = false; }, true);
+
+// Shown until a tour opens
 export function placeholder() {
   newViewer({ panorama: placeholderImage(), defaultZoomLvl: START_ZOOM });
   stepAhead = () => {};
@@ -337,15 +353,14 @@ export function placeholder() {
 
   const v = viewer;
   let last;
-  let stopped = false;
-  const stop = () => { stopped = true; };
-  for (const type of ['pointerdown', 'wheel']) v.container.addEventListener(type, stop, { once: true });
-  v.addEventListener('key-press', stop, { once: true });
-  document.addEventListener('pointerlockchange', stop, { once: true });
   const turn = (t) => {
-    if (stopped || viewer !== v) return;
-    const { yaw, pitch } = v.getPosition();
-    if (last) v.rotate({ yaw: yaw + rad(3) * (t - last) / 1000, pitch });
+    if (viewer !== v) return;
+    const idle = t - lastInput - 1500;
+    if (last && idle > 0 && !pressed && !document.pointerLockElement) {
+      const { yaw, pitch } = v.getPosition();
+      // Eases in over a second
+      v.rotate({ yaw: yaw + rad(3) * Math.min(1, idle / 1000) * (t - last) / 1000, pitch });
+    }
     last = t;
     requestAnimationFrame(turn);
   };

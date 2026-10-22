@@ -19,12 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # Only the viewer, and of node_modules only the files index.html loads, with their licences
+      # The viewer and the demo library, and of node_modules only the files index.html loads, with their licences
       - name: Build site
         run: |
           npm ci --omit=dev
           mkdir -p site/node_modules
           cp index.html *.js *.css LICENSE site/
+          mkdir site/examples
+          cp -r examples/library.json examples/test-patterns site/examples/
           (cd node_modules && cp --parents three/LICENSE three/build/three.module.js three/build/three.core.js \
             @photo-sphere-viewer/*/LICENSE @photo-sphere-viewer/*/index.module.js @photo-sphere-viewer/*/index.css ../site/node_modules/)
           # Fails if an update splits a module into files not copied above

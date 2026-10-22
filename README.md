@@ -4,7 +4,7 @@ A static viewer for 360 panorama tours, built on [Photo Sphere Viewer](https://p
 
 ## Using it
 
-Open https://amyjeanes.github.io/panorama-viewer/ and choose the folder that holds `library.json`, or drop it on the page in Chrome and Edge. Files are read from disk, never uploaded. Chromium based browsers remember recent folders and load the panoramas quicker.
+Open https://amyjeanes.github.io/panorama-viewer/ and choose the folder that holds `library.json`, or drop it on the page in Chrome and Edge. Open demo shows the example library instead. Files are read from disk, never uploaded. Chromium based browsers remember recent folders and load the panoramas quicker.
 
 Drag or use the arrow keys to look, and the wheel or a pinch to zoom. Click an arrow, or press WASD, to walk. Tours without arrows get a thumbnail gallery. Other keys: F fullscreen, I details, M mouse look, G gallery.
 

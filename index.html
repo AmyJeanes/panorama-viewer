@@ -39,7 +39,10 @@
   <div id="details" class="panel"></div>
   <div id="open" class="panel">
     <div class="head"><b>Open a folder</b><span>Select the folder that contains the <code>library.json</code> file</span></div>
-    <button class="button" id="pick"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Choose folder</button>
+    <div class="choices">
+      <button class="button" id="pick"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Choose folder</button>
+      <button class="button secondary" id="demo">Open demo</button>
+    </div>
     <input type="file" id="folder" webkitdirectory hidden>
     <p id="openError"></p>
     <div id="recentBox"><div class="eyebrow">Recent</div><div id="recent"></div></div>

@@ -1,7 +1,7 @@
 // Opening a library folder from this computer: the folder panel, drag and drop, and the recent folders
 import { forgetFolder, recentFolders, rememberFolder } from './folder.js';
-import { load, served, source, under } from './tour.js';
-import { bar, details, folder, FOLDER_ICON, hash, openError, openPanel, pick, recentList } from './ui.js';
+import { demo, load, served, source, under } from './tour.js';
+import { bar, demoButton, details, folder, FOLDER_ICON, hash, openError, openPanel, pick, recentList } from './ui.js';
 
 const FORGET_ICON = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M6.4 5 5 6.4 10.6 12 5 17.6 6.4 19 12 13.4 17.6 19 19 17.6 13.4 12 19 6.4 17.6 5 12 10.6z"/></svg>';
 
@@ -80,6 +80,7 @@ export async function useFolder(handle) {
 }
 
 folder.onchange = () => show(picked(folder.files));
+demoButton.onclick = () => show(demo);
 pick.onclick = () => folder.click();
 
 if (window.showDirectoryPicker) {

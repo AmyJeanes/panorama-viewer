@@ -14,6 +14,7 @@ export const badge = document.getElementById('badge');
 export const openPanel = document.getElementById('open');
 export const folder = document.getElementById('folder');
 export const pick = document.getElementById('pick');
+export const demoButton = document.getElementById('demo');
 export const recentList = document.getElementById('recent');
 export const openError = document.getElementById('openError');
 export const galleryButton = document.getElementById('gallery');
