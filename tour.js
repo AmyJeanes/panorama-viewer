@@ -296,7 +296,50 @@ async function open(entry, ticket) {
   showArrows();
 }
 
+// PSV asks for every frame even when nothing changes, which keeps the browser busy at the screen's refresh rate.
+// Its loop pauses a second after the last redraw and resumes when PSV asks for one, or on input.
+let wake = () => {};
+for (const type of ['pointerdown', 'wheel', 'keydown']) addEventListener(type, () => wake(), true);
+// A held drag moves the view from PSV's loop
+addEventListener('pointermove', (e) => e.buttons && wake(), true);
+
+function pauseWhenIdle(v) {
+  const r = v.renderer;
+  let lastDraw;
+  let awake = false;
+  v.addEventListener('render', () => { lastDraw = performance.now(); });
+  const frame = (t) => {
+    r.__renderLoop(t);
+    if (t - lastDraw > 1000) {
+      awake = false;
+      // After three.js has asked for the next frame, so that one is cancelled too
+      queueMicrotask(() => awake || r.renderer.setAnimationLoop(null));
+    }
+  };
+  const start = () => {
+    // A replaced viewer stays asleep
+    if (awake || wake !== start) return;
+    awake = true;
+    lastDraw = performance.now();
+    // So the first frame back doesn't count the pause as time passed
+    r.timestamp = undefined;
+    r.renderer.setAnimationLoop(frame);
+  };
+  const needsUpdate = v.needsUpdate;
+  v.needsUpdate = () => {
+    needsUpdate.call(v);
+    start();
+  };
+  // PSV starts its own loop as the first panorama loads
+  v.addEventListener('ready', () => {
+    if (viewer !== v) return;
+    wake = start;
+    start();
+  }, { once: true });
+}
+
 function newViewer(options) {
+  wake = () => {};
   viewer?.destroy();
   // A failed build leaves nothing to destroy
   viewer = undefined;
@@ -309,6 +352,7 @@ function newViewer(options) {
     navbar: false,
     ...options,
   });
+  pauseWhenIdle(viewer);
   bar.hidden = false;
   viewer.addEventListener('click', closePanels);
 }
@@ -355,6 +399,9 @@ export function placeholder() {
   let last;
   const turn = (t) => {
     if (viewer !== v) return;
+    requestAnimationFrame(turn);
+    // About 60 turns a second is smooth at this speed and saves redraws on faster screens
+    if (t - last < 15) return;
     const idle = t - lastInput - 1500;
     if (last && idle > 0 && !pressed && !document.pointerLockElement) {
       const { yaw, pitch } = v.getPosition();
@@ -362,7 +409,6 @@ export function placeholder() {
       v.rotate({ yaw: yaw + rad(3) * Math.min(1, idle / 1000) * (t - last) / 1000, pitch });
     }
     last = t;
-    requestAnimationFrame(turn);
   };
   v.addEventListener('ready', () => requestAnimationFrame(turn), { once: true });
 }
