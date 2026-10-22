@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panorama Viewer</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23171b21'/%3E%3Ccircle cx='16' cy='16' r='10' fill='none' stroke='%2322aa66' stroke-width='2.5'/%3E%3Cellipse cx='16' cy='16' rx='10' ry='3.5' fill='none' stroke='%23fff' stroke-width='2'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="node_modules/@photo-sphere-viewer/core/index.css">
+<link rel="stylesheet" href="node_modules/@photo-sphere-viewer/virtual-tour-plugin/index.css">
+<link rel="stylesheet" href="node_modules/@photo-sphere-viewer/gallery-plugin/index.css">
+<link rel="stylesheet" href="viewer.css">
+<script type="importmap">
+{ "imports": {
+  "three": "./node_modules/three/build/three.module.js",
+  "@photo-sphere-viewer/core": "./node_modules/@photo-sphere-viewer/core/index.module.js",
+  "@photo-sphere-viewer/equirectangular-tiles-adapter": "./node_modules/@photo-sphere-viewer/equirectangular-tiles-adapter/index.module.js",
+  "@photo-sphere-viewer/virtual-tour-plugin": "./node_modules/@photo-sphere-viewer/virtual-tour-plugin/index.module.js",
+  "@photo-sphere-viewer/gallery-plugin": "./node_modules/@photo-sphere-viewer/gallery-plugin/index.module.js"
+} }
+</script>
+</head>
+<body>
+<div id="viewer"></div>
+<!-- The arrows' dark outline, drawn around all of them at once so overlapping arrows merge (viewer.css) -->
+<svg width="0" height="0" style="position: absolute"><filter id="arrow-outline"><feMorphology in="SourceAlpha" operator="dilate" radius="4"/><feComponentTransfer><feFuncA type="linear" slope=".55"/></feComponentTransfer><feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge></filter></svg>
+<div id="bar" hidden>
+  <div class="row">
+    <button id="hide" title="Hide the bar"></button>
+    <span id="title">Panorama Viewer</span>
+    <button id="openFolder" title="Open a folder" hidden></button>
+    <select id="tour"></select>
+    <button id="gallery" title="Panoramas (G)" hidden></button>
+    <button id="info" title="Details (I)"></button>
+    <button id="look" title="Mouse look (M)"></button>
+    <button id="fullscreen" title="Fullscreen (F)"></button>
+  </div>
+  <span id="badge" class="badge"></span>
+  <button id="show" title="Show the bar"></button>
+  <div id="details" class="panel"></div>
+  <div id="open" class="panel">
+    <div class="head"><b>Open a folder</b><span>Select the folder that contains the <code>library.json</code> file</span></div>
+    <button class="button" id="pick"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M3 6a2 2 0 0 1 2-2h5l2 2h7a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>Choose folder</button>
+    <input type="file" id="folder" webkitdirectory hidden>
+    <p id="openError"></p>
+    <div id="recentBox"><div class="eyebrow">Recent</div><div id="recent"></div></div>
+    <p class="note"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a5 5 0 0 0-5 5v3H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2h-1V7a5 5 0 0 0-5-5zm-3 8V7a3 3 0 0 1 6 0v3z"/></svg>Files are only used locally, nothing is uploaded</p>
+  </div>
+</div>
+<script type="module" src="viewer.js"></script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+name: CI
+on:
+  push:
+    branches:
+      - main
+      - renovate/*
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Only the viewer, and of node_modules only the files index.html loads, with their licences
+      - name: Build site
+        run: |
+          npm ci --omit=dev
+          mkdir -p site/node_modules
+          cp index.html *.js *.css LICENSE site/
+          (cd node_modules && cp --parents three/LICENSE three/build/three.module.js three/build/three.core.js \
+            @photo-sphere-viewer/*/LICENSE @photo-sphere-viewer/*/index.module.js @photo-sphere-viewer/*/index.css ../site/node_modules/)
+          # Fails if an update splits a module into files not copied above
+          for f in $(find site/node_modules -name '*.js'); do
+            grep -oE "from ['\"]\./[^'\"]+" "$f" | sed -E "s/from ['\"]//" | while read -r d; do
+              test -f "$(dirname "$f")/$d" || { echo "$f imports missing $d"; exit 1; }
+            done || exit 1
+          done
+
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
+
+  deploy:
+    name: Deploy
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    concurrency: pages
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@368f82528645a54fb793d4d04e342629a3f51346 # v5.0.1

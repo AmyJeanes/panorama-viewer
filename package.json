@@ -1,0 +1,11 @@
+{
+  "name": "panorama-viewer",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "@photo-sphere-viewer/core": "5.15.1",
+    "@photo-sphere-viewer/equirectangular-tiles-adapter": "5.15.1",
+    "@photo-sphere-viewer/gallery-plugin": "5.15.1",
+    "@photo-sphere-viewer/virtual-tour-plugin": "5.15.1"
+  }
+}

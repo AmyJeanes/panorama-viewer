@@ -1,0 +1,4 @@
+node_modules/
+__pycache__/
+# A link to a private library, for running locally; never committed
+/data

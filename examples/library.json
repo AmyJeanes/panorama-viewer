@@ -1,0 +1,29 @@
+{
+  "name": "Panorama Viewer examples",
+  "tours": [
+    {
+      "name": "Linked tour",
+      "path": "test-patterns/linked-tour.json"
+    },
+    {
+      "name": "Single panorama",
+      "path": "test-patterns/single.json"
+    },
+    {
+      "name": "Incomplete panorama",
+      "path": "test-patterns/incomplete.json"
+    },
+    {
+      "name": "Low resolution",
+      "path": "test-patterns/low-resolution.json"
+    },
+    {
+      "name": "Horizon band only",
+      "path": "test-patterns/horizon-band.json"
+    },
+    {
+      "name": "Thumbnails only",
+      "path": "test-patterns/thumbnails.json"
+    }
+  ]
+}
