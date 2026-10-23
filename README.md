@@ -6,7 +6,7 @@ A static viewer for 360 panorama tours, built on [Photo Sphere Viewer](https://p
 
 Open https://amyjeanes.github.io/panorama-viewer/ and choose the folder that holds `library.json`, or drop it on the page in Chrome and Edge. Open demo shows the example library instead. Files are read from disk, never uploaded. Chromium based browsers remember recent folders and load the panoramas quicker.
 
-Drag or use the arrow keys to look, and the wheel or a pinch to zoom. Click an arrow, or press WASD, to walk. Tours without arrows get a thumbnail gallery. Other keys: F fullscreen, I details, M mouse look, G gallery.
+Drag or use the arrow keys to look, and the wheel or a pinch to zoom. Click an arrow, or press WASD, to walk. Tours of several panoramas have a gallery, open from the start when there are no arrows. Right click or M turns mouse look on and off. Other keys: F fullscreen, I details, G gallery, H hide the bar.
 
 ## Making tiles
 
@@ -14,7 +14,11 @@ Drag or use the arrow keys to look, and the wheel or a pinch to zoom. Click an a
 uv run tiles.py <image>.jpg <library>/<source folder>
 ```
 
-This writes the tiles to `tiles/<image>/` in that folder and prints the panorama's `width`, `height` and `tiles` fields for its manifest.
+This writes the tiles to `tiles/<image>/` in that folder and prints the panorama's `width`, `height` and `tiles` fields for its manifest. Once the manifest is written, and whenever a start view changes, draw the gallery thumbnails:
+
+```
+uv run thumbs.py <library>/<source folder>/<tour>.json
+```
 
 ## Running locally
 

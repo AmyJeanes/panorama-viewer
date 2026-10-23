@@ -12,6 +12,8 @@ function picked(files) {
   const byPath = new Map([...files].map((f) => [f.webkitRelativePath.slice(f.webkitRelativePath.indexOf('/') + 1), f]));
   const urls = new Map();
   return {
+    // Remembers the view by folder name, as there is no handle to tell folders apart
+    key: `picked/${files[0]?.webkitRelativePath.split('/')[0]}`,
     url: (path) => {
       // A missing file becomes an empty blob, so it fails to load like a missing file on a server
       if (!urls.has(path)) urls.set(path, URL.createObjectURL(byPath.get(path) ?? new Blob()));

@@ -15,13 +15,16 @@ const first = query.get('demo') === '1' ? demo : query.get('pick') === '1' ? nul
 
 const { ICONS } = CONSTANTS;
 // Hiding leaves a tab at the edge to bring the bar back
-document.getElementById('hide').innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M15.4 7.4 14 6l-6 6 6 6 1.4-1.4-4.6-4.6z"/></svg>';
-document.getElementById('show').innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.6 7.4 10 6l6 6-6 6-1.4-1.4 4.6-4.6z"/></svg>';
-document.getElementById('hide').onclick = () => {
+const hideButton = document.getElementById('hide');
+const showButton = document.getElementById('show');
+// An eye struck through, so it doesn't read as a back button
+hideButton.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"/></svg>';
+showButton.innerHTML = '<svg viewBox="0 0 24 24"><path fill="currentColor" d="M8.6 7.4 10 6l6 6-6 6-1.4-1.4 4.6-4.6z"/></svg>';
+hideButton.onclick = () => {
   closePanels();
   bar.classList.add('tucked');
 };
-document.getElementById('show').onclick = () => bar.classList.remove('tucked');
+showButton.onclick = () => bar.classList.remove('tucked');
 infoButton.innerHTML = ICONS.info;
 infoButton.onclick = () => {
   // The details hang from the bar, so it must be showing
@@ -41,7 +44,7 @@ galleryButton.onclick = () => viewer.getPlugin(GalleryPlugin).toggle();
 openFolderButton.innerHTML = FOLDER_ICON;
 openFolderButton.onclick = () => (openPanel.classList.contains('open') ? openPanel.classList.remove('open') : showOpenPanel());
 
-// Mouse look: the pointer is locked, so moving the mouse turns the view. A click walks ahead; M or Esc ends it.
+// Mouse look: the pointer is locked, so moving the mouse turns the view. A click walks ahead; right click, M or Esc ends it.
 const looking = () => document.pointerLockElement === viewerElement;
 const lock = (options) => Promise.resolve(viewerElement.requestPointerLock(options));
 function toggleLook() {
@@ -66,7 +69,15 @@ let lockedPress = false;
 document.addEventListener('pointerlockchange', () => {
   viewerElement.classList.toggle('look', looking());
   lockedAt = performance.now();
+  viewer?.notification.show({ content: looking() ? 'Mouse look on. Right click, M or Esc to stop.' : 'Mouse look off', timeout: 2000 });
 });
+// Right click starts and ends it too, on the press: Chrome sends no contextmenu while locked
+viewerElement.addEventListener('mousedown', (e) => {
+  if (e.button !== 2) return;
+  closePanels();
+  toggleLook();
+});
+viewerElement.addEventListener('contextmenu', (e) => e.preventDefault());
 // While locked, mouse events reach #viewer, not PSV
 viewerElement.addEventListener('mousemove', (e) => {
   if (!looking()) return;
@@ -82,17 +93,20 @@ viewerElement.addEventListener('mousedown', (e) => {
   lockedPress = looking() && e.button === 0 && performance.now() - lockedAt > 500;
 });
 viewerElement.addEventListener('click', () => lockedPress && looking() && stepAhead());
-// PSV doesn't see the wheel while locked, so zoom here
+// Zoom follows the wheel by how far it turned, settling within a tenth of a second; PSV's own wheel zoom lags behind.
+// Firefox counts lines, about 33px each.
 viewerElement.addEventListener('wheel', (e) => {
-  if (!looking() || !e.deltaY) return;
+  if (!viewer || !e.deltaY || e.target.closest('.psv--capture-event')) return;
   e.preventDefault();
-  viewer.zoomIn(-Math.sign(e.deltaY) * 5);
+  viewer.dynamics.zoom.step(-e.deltaY * (e.deltaMode ? 33 : 1) / 20, 30);
 });
 
 // Shortcut keys, once a tour is open
-const shortcuts = { f: fullscreenButton, i: infoButton, m: lookButton, g: galleryButton };
+const shortcuts = { f: fullscreenButton, i: infoButton, m: lookButton, g: galleryButton, h: hideButton };
 addEventListener('keydown', (e) => {
-  const button = shortcuts[e.key.toLowerCase()];
+  const key = e.key.toLowerCase();
+  // H hides the bar and brings it back
+  const button = key === 'h' && bar.classList.contains('tucked') ? showButton : shortcuts[key];
   if (!button || button.hidden || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
   if (viewer && !bar.classList.contains('empty')) button.click();
 });

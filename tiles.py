@@ -32,7 +32,6 @@ def main(image, folder='.'):
     out.mkdir(parents=True, exist_ok=True)
     base = min(w, BASE)
     img.resize((base, base // 2), Image.Resampling.LANCZOS).save(out / 'base.jpg', quality=QUALITY)
-    img.resize((320, 160), Image.Resampling.LANCZOS).save(out / 'thumb.jpg', quality=QUALITY)
 
     # Columns at full width: tiles of at most MAX_TILE px, as a power of two up to 64, which Photo Sphere Viewer needs
     top = 4

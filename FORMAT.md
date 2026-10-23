@@ -48,8 +48,9 @@ A library is a folder whose `library.json` lists its tours. A tour is a JSON man
 - Only `title` and the panoramas' `id` and `tiles` are required. Other fields are ignored, so an archive can keep its own metadata.
 - Angles are degrees: yaw clockwise in [-180, 180), pitch positive up.
 - `heading` is the bearing of the image's centre column, [0, 360), in one frame for the whole tour (true north, or matched by eye). Link and start yaws are in that frame too, so walking keeps your direction.
-- Each link is drawn as an arrow. `startView` defaults to facing the heading.
+- Each link is drawn as an arrow. Walking keeps your direction; a link with `"keepView": false` opens at the next panorama's start view instead. `startView` defaults to facing the heading.
 - `id`s use only letters, digits, `_`, `.` and `-`. `start` defaults to the first panorama.
 - `partial: true` shows an "Incomplete Panorama" badge; a string shows that label instead.
 - `title`, `description`, `credits`, `copyright` and `source` fill the details panel.
-- `tiles` is written by `tiles.py`: `dir` relative to the manifest, levels coarsest first.
+- A panorama's `title` names it in the gallery, which tours of more than one panorama have. Untitled ones are View 1, View 2 and so on.
+- `tiles` is written by `tiles.py`: `dir` relative to the manifest, levels coarsest first. `thumbs.py` draws each `thumb.jpg` as its panorama's start view.

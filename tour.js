@@ -29,11 +29,27 @@ const ROOT = 'https://data.invalid/';
 // Resolves ./ and ../ in a data path
 const resolve = (path, from = '') => decodeURIComponent(new URL(encode(path), ROOT + encode(from)).pathname.slice(1));
 
-// Files served next to the page: data/, or a picked folder through sw.js
-export const under = (dir) => ({ url: (path) => new URL(encode(path), new URL(dir, location.href)).href });
+// Files served next to the page: data/, or a picked folder through sw.js. key names the library to remember its view by.
+export const under = (dir) => ({ key: dir, url: (path) => new URL(encode(path), new URL(dir, location.href)).href });
 export const served = under('data/');
 // The example library, shipped with the site
 export const demo = under('examples/');
+
+// Each library's last tour, in this browser only
+const lastTour = (from) => {
+  try {
+    return localStorage.getItem(`tour:${from.key}`);
+  } catch {
+    return null;
+  }
+};
+const saveTour = (from, path) => {
+  try {
+    localStorage.setItem(`tour:${from.key}`, path);
+  } catch {
+    // Without storage, tours aren't remembered
+  }
+};
 
 async function json(path, from = source) {
   const r = await fetch(from.url(resolve(path)));
@@ -59,9 +75,10 @@ export async function load(from) {
   await openFromHash();
 }
 
-// Opens the tour in the hash, or the first one
+// Opens the tour in the hash, or else the library's last one, or its first
 function openFromHash() {
-  const entry = tours.find((t) => t.path === hash().get('tour')) ?? tours[0];
+  const find = (path) => tours.find((t) => t.path === path);
+  const entry = find(hash().get('tour')) ?? find(lastTour(source)) ?? tours[0];
   const ticket = ++opening;
   return open(entry, ticket).catch((e) => {
     console.error(e);
@@ -129,6 +146,48 @@ for (const [key, turn] of Object.entries({ w: 0, a: -90, s: 180, d: 90 })) {
   for (const k of [key, key.toUpperCase(), `Shift+${key}`, `Shift+${key.toUpperCase()}`]) walkKeys[k] = turn;
 }
 
+// Held arrow keys turn and Page Up/Down or +/- zoom, easing in and out over a tenth of a second, and two arrows together
+// turn both ways at once. PSV's own keys take one at a time and drift on after release.
+const KEYS = {
+  ArrowLeft: ['yaw', -1], ArrowRight: ['yaw', 1], ArrowUp: ['pitch', 1], ArrowDown: ['pitch', -1],
+  PageUp: ['zoom', 1], PageDown: ['zoom', -1], '+': ['zoom', 1], '-': ['zoom', -1],
+};
+const EASE = 0.1;
+// Zoom levels a second; turning is 1.2 fields of view a second, so it keeps pace with the picture when zoomed in
+const ZOOM_SPEED = 80;
+const TURN_SPEED = 1.2;
+const held = new Set();
+// Each axis's speed, from -1 to 1
+const speed = { yaw: 0, pitch: 0, zoom: 0 };
+const keyActions = {};
+for (const key of Object.keys(KEYS)) {
+  keyActions[key] = (_, e) => {
+    // Ends any animation, as PSV's own keys do
+    if (!e.repeat) viewer.stopAll();
+    held.add(key);
+  };
+}
+addEventListener('keyup', (e) => held.delete(e.key));
+addEventListener('blur', () => held.clear());
+
+// Runs each frame, from PSV's loop
+function moveByKeys(elapsed) {
+  const step = elapsed / 1000 / EASE;
+  for (const axis of Object.keys(speed)) {
+    // The last pressed of two opposite keys wins
+    const key = [...held].findLast((k) => KEYS[k][0] === axis);
+    const target = key ? KEYS[key][1] : 0;
+    speed[axis] += Math.max(-step, Math.min(step, target - speed[axis]));
+  }
+  const seconds = elapsed / 1000;
+  if (speed.zoom) viewer.zoom(viewer.getZoomLevel() + speed.zoom * ZOOM_SPEED * seconds);
+  if (speed.yaw || speed.pitch) {
+    const { yaw, pitch } = viewer.getPosition();
+    const turn = rad(viewer.state.vFov) * TURN_SPEED * seconds;
+    viewer.rotate({ yaw: yaw + speed.yaw * turn, pitch: Math.max(-Math.PI / 2, Math.min(Math.PI / 2, pitch + speed.pitch * turn)) });
+  }
+}
+
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 // The details panel's HTML
@@ -180,8 +239,7 @@ async function open(entry, ticket) {
   if (ticket !== opening) return;
   const byId = check(tour.panoramas);
   const hasLinks = tour.panoramas.some((p) => p.links?.length);
-  // Tours without arrows get thumbnails instead
-  const thumbs = tour.panoramas.length > 1 && !hasLinks;
+  const several = tour.panoramas.length > 1;
 
   // PSV calls panoramas nodes. Turning each by its heading lines them all up, so link yaws work as given.
   const nodes = tour.panoramas.map((p, i) => {
@@ -189,7 +247,7 @@ async function open(entry, ticket) {
     return {
       id: p.id,
       // The gallery shows names as HTML
-      name: esc(`${p.title ?? i + 1}${p.partial ? ' (partial)' : ''}`),
+      name: esc(`${p.title ?? `View ${i + 1}`}${p.partial ? ' (partial)' : ''}`),
       panorama: {
         baseUrl: from.url(`${dir}base.jpg`),
         levels: p.tiles.levels,
@@ -197,7 +255,7 @@ async function open(entry, ticket) {
       },
       thumbnail: from.url(`${dir}thumb.jpg`),
       sphereCorrection: { pan: -rad(p.heading ?? 0) },
-      links: (p.links ?? []).map((l) => ({ nodeId: l.to, position: { yaw: rad(l.yaw), pitch: rad(l.pitch ?? 0) } })),
+      links: (p.links ?? []).map((l) => ({ nodeId: l.to, position: { yaw: rad(l.yaw), pitch: rad(l.pitch ?? 0) }, data: { keepView: l.keepView ?? true } })),
     };
   });
 
@@ -214,9 +272,9 @@ async function open(entry, ticket) {
   // No fade or spinner: local panoramas load almost instantly
   const cut = { effect: 'none', rotation: false, showLoader: false };
   const transitionOptions = (toNode, fromNode, fromLink) => {
-    // Walking keeps the current view
-    if (fromLink) return { ...cut, rotateTo: undefined, zoomTo: undefined };
-    // A gallery jump opens the panorama's start view
+    // Walking keeps the current view, unless the link says otherwise
+    if (fromLink?.data.keepView) return { ...cut, rotateTo: undefined, zoomTo: undefined };
+    // Other links and gallery jumps open the panorama's start view
     if (fromNode) return { ...cut, rotateTo: startOf(byId.get(toNode.id)), zoomTo: START_ZOOM };
     return cut;
   };
@@ -247,7 +305,8 @@ async function open(entry, ticket) {
   };
 
   const tourPlugin = [VirtualTourPlugin, { renderMode: '3d', nodes, startNodeId: start.id, showLinkTooltip: false, transitionOptions, arrowStyle }];
-  const galleryPlugin = [GalleryPlugin, { thumbnailSize: { width: 160, height: 80 }, visibleOnLoad: true, hideOnClick: false }];
+  // Tours without arrows open with the thumbnails showing
+  const galleryPlugin = [GalleryPlugin, { thumbnailSize: { width: 160, height: 90 }, visibleOnLoad: !hasLinks, hideOnClick: false }];
   // Before newViewer, so bad details fail without tearing down the current tour
   const info = describe(tour);
   newViewer({
@@ -255,14 +314,15 @@ async function open(entry, ticket) {
     defaultYaw: startView.yaw,
     defaultPitch: startView.pitch,
     defaultZoomLvl: startZoom,
-    keyboardActions: { ...DEFAULTS.keyboardActions, ...walking },
+    keyboardActions: walking,
     // Gallery first: it clears itself as it starts
-    plugins: thumbs ? [galleryPlugin, tourPlugin] : [tourPlugin],
+    plugins: several ? [galleryPlugin, tourPlugin] : [tourPlugin],
   });
   details.innerHTML = info;
+  saveTour(from, entry.path);
   // Clears the last tour's badge
   setBadge('');
-  galleryButton.hidden = !thumbs;
+  galleryButton.hidden = !several;
 
   // Saves the view in the hash once it settles
   const plugin = viewer.getPlugin(VirtualTourPlugin);
@@ -350,9 +410,13 @@ function newViewer(options) {
     maxFov: MAX_FOV,
     keyboard: 'always',
     navbar: false,
+    // viewer.js zooms with the wheel
+    mousewheel: false,
     ...options,
+    keyboardActions: { ...DEFAULTS.keyboardActions, ...keyActions, ...options.keyboardActions },
   });
   pauseWhenIdle(viewer);
+  viewer.addEventListener('before-render', ({ elapsed }) => moveByKeys(elapsed));
   bar.hidden = false;
   viewer.addEventListener('click', closePanels);
 }

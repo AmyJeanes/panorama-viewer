@@ -110,6 +110,15 @@ html, body {
   pointer-events: none;
 }
 
+/* The notice as it starts and ends, larger than PSV's and in the bar's colours */
+#viewer .psv-notification-content {
+  padding: 14px 28px;
+  background: var(--panel);
+  color: #eee;
+  border-radius: 8px;
+  font: 22px system-ui, sans-serif;
+}
+
 /* The bar can't be reached without a pointer, so only the badge stays */
 #viewer.look ~ #bar > :not(.badge) {
   display: none;
@@ -202,6 +211,11 @@ html, body {
   button svg {
     width: 18px;
     height: 18px;
+  }
+  /* Pressed in while their panel is open */
+  &:has(#details.open) #info, body:has(.psv-gallery--open) & #gallery {
+    background: rgba(255, 255, 255, .22);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, .7);
   }
 
   /* Until a folder is open the bar is only a title over the folder panel, which stays open */
