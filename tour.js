@@ -323,6 +323,7 @@ async function open(entry, ticket) {
   // Clears the last tour's badge
   setBadge('');
   galleryButton.hidden = !several;
+  if (several) galleryScrollbar();
 
   // Saves the view in the hash once it settles
   const plugin = viewer.getPlugin(VirtualTourPlugin);
@@ -396,6 +397,26 @@ function pauseWhenIdle(v) {
     wake = start;
     start();
   }, { once: true });
+}
+
+// A thin bar under the gallery shows which part of the list is in view. Hidden when it all fits, or on narrow screens,
+// where the gallery is a grid.
+function galleryScrollbar() {
+  const gallery = viewer.getPlugin(GalleryPlugin);
+  const list = viewerElement.querySelector('.psv-gallery-container');
+  const track = document.createElement('div');
+  track.className = 'gallery-scrollbar';
+  const thumb = track.appendChild(document.createElement('div'));
+  list.after(track);
+  const update = () => {
+    const { scrollLeft, scrollWidth, clientWidth } = list;
+    track.hidden = scrollWidth <= clientWidth;
+    thumb.style.left = `${scrollLeft / scrollWidth * 100}%`;
+    thumb.style.width = `${clientWidth / scrollWidth * 100}%`;
+  };
+  list.addEventListener('scroll', update);
+  gallery.addEventListener('show-gallery', update);
+  new ResizeObserver(update).observe(list);
 }
 
 function newViewer(options) {

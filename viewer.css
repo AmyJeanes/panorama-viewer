@@ -32,6 +32,31 @@ html, body {
     background: #111;
   }
 
+  /* Nothing to select, or dragging the list would start dragging the selection instead of scrolling */
+  .psv-gallery {
+    user-select: none;
+  }
+  /* Chrome's own only shows while scrolling; tour.js draws one that stays */
+  .psv-gallery-container {
+    scrollbar-width: none;
+  }
+  .gallery-scrollbar {
+    position: absolute;
+    right: 15px;
+    bottom: 5px;
+    left: 15px;
+    height: 4px;
+    pointer-events: none;
+
+    div {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      background: rgba(255, 255, 255, .7);
+      border-radius: 2px;
+    }
+  }
+
   /* One outline around all the arrows (index.html), so overlapping ones merge, and a shadow close under them: PSV's own
      falls 10px below, which makes them look like they float */
   .psv-virtual-tour-arrows {

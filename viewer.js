@@ -93,6 +93,19 @@ viewerElement.addEventListener('mousedown', (e) => {
   lockedPress = looking() && e.button === 0 && performance.now() - lockedAt > 500;
 });
 viewerElement.addEventListener('click', () => lockedPress && looking() && stepAhead());
+// The gallery scrolls with the wheel at once, about a thumbnail a notch; PSV's eases each notch in and lags behind
+viewerElement.addEventListener('wheel', (e) => {
+  const list = e.target.closest('.psv-gallery-container');
+  if (!list) return;
+  e.preventDefault();
+  // Before PSV's own handler, on the list
+  e.stopPropagation();
+  const { gallery } = viewer.getPlugin(GalleryPlugin);
+  const axis = gallery.isAboveBreakpoint ? 'scrollLeft' : 'scrollTop';
+  list[axis] += (e.deltaY || e.deltaX) * (e.deltaMode ? 33 : 1) * 2;
+  // PSV's arrow buttons carry on from here
+  gallery.state[axis] = list[axis];
+}, true);
 // Zoom follows the wheel by how far it turned, settling within a tenth of a second; PSV's own wheel zoom lags behind.
 // Firefox counts lines, about 33px each.
 viewerElement.addEventListener('wheel', (e) => {
