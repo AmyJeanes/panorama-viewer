@@ -1,5 +1,5 @@
 # /// script
-# dependencies = ["pillow==12.3.0"]
+# dependencies = ["pillow==13.0.0"]
 # ///
 """Cuts an original 2:1 equirectangular image into the viewer's tiles and prints the panorama's manifest fields.
 
